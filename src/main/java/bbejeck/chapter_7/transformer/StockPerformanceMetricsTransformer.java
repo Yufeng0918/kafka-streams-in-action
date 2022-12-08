@@ -87,7 +87,7 @@ public class StockPerformanceMetricsTransformer implements Transformer<String, S
         }
     }
 
-    @Override
+//    @Override
     @SuppressWarnings("deprecation")
     public KeyValue<String, StockPerformance> punctuate(long l) {
         throw new UnsupportedOperationException("Should not call punctuate");

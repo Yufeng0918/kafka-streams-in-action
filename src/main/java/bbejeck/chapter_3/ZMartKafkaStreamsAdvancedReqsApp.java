@@ -25,7 +25,7 @@ import bbejeck.util.serde.StreamsSerdes;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.Consumed;
+import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -107,6 +107,11 @@ public class ZMartKafkaStreamsAdvancedReqsApp {
 
 
          // security Requirements to record transactions for certain employee
+        //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic patterns  --from-beginning
+        //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic rewards  --from-beginning
+        //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic purchases  --from-beginning
+        //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic coffee  --from-beginning
+        //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic electronics  --from-beginning
         ForeachAction<String, Purchase> purchaseForeachAction = (key, purchase) ->
                 SecurityDBService.saveRecord(purchase.getPurchaseDate(), purchase.getEmployeeId(), purchase.getItemPurchased());
 

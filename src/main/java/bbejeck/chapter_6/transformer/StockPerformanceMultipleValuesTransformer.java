@@ -54,7 +54,7 @@ public class StockPerformanceMultipleValuesTransformer implements Transformer<St
         return null;
     }
 
-    @Override
+//    @Override
     @SuppressWarnings("deprecation")
     public KeyValue<String, List<KeyValue<String, StockPerformance>>> punctuate(long timestamp) {
         List<KeyValue<String, StockPerformance>> stockPerformanceList = new ArrayList<>();

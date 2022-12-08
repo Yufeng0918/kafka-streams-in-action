@@ -19,7 +19,7 @@ package bbejeck.chapter_3;
 import bbejeck.clients.producer.MockDataProducer;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.Consumed;
+import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
@@ -54,12 +54,12 @@ public class KafkaStreamsYellingApp {
         KStream<String, String> simpleFirstStream = builder.stream("src-topic", Consumed.with(stringSerde, stringSerde));
 
 
-        KStream<String, String> upperCasedStream = simpleFirstStream.mapValues(String::toUpperCase);
+        KStream<String, String> upperCasedStream = simpleFirstStream.mapValues(v -> v.toUpperCase());
 
         upperCasedStream.to( "out-topic", Produced.with(stringSerde, stringSerde));
         upperCasedStream.print(Printed.<String, String>toSysOut().withLabel("Yelling App"));
 
-
+        //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic out-topic  --from-beginning
         KafkaStreams kafkaStreams = new KafkaStreams(builder.build(),streamsConfig);
         LOG.info("Hello World Yelling App Started");
         kafkaStreams.start();

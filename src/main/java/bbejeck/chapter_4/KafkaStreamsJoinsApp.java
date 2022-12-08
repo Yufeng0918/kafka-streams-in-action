@@ -25,21 +25,15 @@ import bbejeck.util.serde.StreamsSerdes;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.Consumed;
+import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.JoinWindows;
-import org.apache.kafka.streams.kstream.Joined;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KeyValueMapper;
-import org.apache.kafka.streams.kstream.Predicate;
-import org.apache.kafka.streams.kstream.Printed;
-import org.apache.kafka.streams.kstream.ValueJoiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.Properties;
 
 
@@ -77,12 +71,12 @@ public class KafkaStreamsJoinsApp {
         KStream<String, Purchase> electronicsStream = branchesStream[ELECTRONICS_PURCHASE];
 
         ValueJoiner<Purchase, Purchase, CorrelatedPurchase> purchaseJoiner = new PurchaseJoiner();
-        JoinWindows twentyMinuteWindow =  JoinWindows.of(60 * 1000 * 20);
+        JoinWindows twentyMinuteWindow =  JoinWindows.of(Duration.ofMinutes(20L));
 
         KStream<String, CorrelatedPurchase> joinedKStream = coffeeStream.join(electronicsStream,
                                                                               purchaseJoiner,
                                                                               twentyMinuteWindow,
-                                                                              Joined.with(stringSerde,
+                                                                              StreamJoined.with(stringSerde,
                                                                                           purchaseSerde,
                                                                                           purchaseSerde));
 
