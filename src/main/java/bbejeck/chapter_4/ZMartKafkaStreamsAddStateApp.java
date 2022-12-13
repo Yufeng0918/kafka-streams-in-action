@@ -50,23 +50,18 @@ public class ZMartKafkaStreamsAddStateApp {
 
     public static void main(String[] args) throws Exception {
         
-        StreamsConfig streamsConfig = new StreamsConfig(getProperties());
-
         Serde<Purchase> purchaseSerde = StreamsSerdes.PurchaseSerde();
         Serde<PurchasePattern> purchasePatternSerde = StreamsSerdes.PurchasePatternSerde();
         Serde<RewardAccumulator> rewardAccumulatorSerde = StreamsSerdes.RewardAccumulatorSerde();
         Serde<String> stringSerde = Serdes.String();
 
         StreamsBuilder builder = new StreamsBuilder();
-
         KStream<String,Purchase> purchaseKStream = builder.stream( "transactions", Consumed.with(stringSerde, purchaseSerde))
                 .mapValues(p -> Purchase.builder(p).maskCreditCard().build());
 
         KStream<String, PurchasePattern> patternKStream = purchaseKStream.mapValues(purchase -> PurchasePattern.builder(purchase).build());
-
         patternKStream.print(Printed.<String, PurchasePattern>toSysOut().withLabel("patterns"));
         patternKStream.to("patterns", Produced.with(stringSerde, purchasePatternSerde));
-
 
 
          // adding State to processor
@@ -94,7 +89,7 @@ public class ZMartKafkaStreamsAddStateApp {
 
         
         LOG.info("Starting Adding State Example");
-        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(),streamsConfig);
+        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(),getProperties());
         LOG.info("ZMart Adding State Application Started");
         kafkaStreams.cleanUp();
         kafkaStreams.start();

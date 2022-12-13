@@ -44,9 +44,6 @@ public class ZMartKafkaStreamsApp {
 
     public static void main(String[] args) throws Exception {
 
-
-        StreamsConfig streamsConfig = new StreamsConfig(getProperties());
-
         Serde<Purchase> purchaseSerde = StreamsSerdes.PurchaseSerde();
         Serde<PurchasePattern> purchasePatternSerde = StreamsSerdes.PurchasePatternSerde();
         Serde<RewardAccumulator> rewardAccumulatorSerde = StreamsSerdes.RewardAccumulatorSerde();
@@ -58,16 +55,13 @@ public class ZMartKafkaStreamsApp {
                 .mapValues(p -> Purchase.builder(p).maskCreditCard().build());
         
         KStream<String, PurchasePattern> patternKStream = purchaseKStream.mapValues(purchase -> PurchasePattern.builder(purchase).build());
-
         patternKStream.print(Printed.<String, PurchasePattern>toSysOut().withLabel("patterns"));
         patternKStream.to("patterns", Produced.with(stringSerde,purchasePatternSerde));
 
         
         KStream<String, RewardAccumulator> rewardsKStream = purchaseKStream.mapValues(purchase -> RewardAccumulator.builder(purchase).build());
-
         rewardsKStream.print(Printed.<String, RewardAccumulator>toSysOut().withLabel("rewards"));
         rewardsKStream.to("rewards", Produced.with(stringSerde,rewardAccumulatorSerde));
-
 
 
         purchaseKStream.print(Printed.<String, Purchase>toSysOut().withLabel("purchases"));
@@ -79,8 +73,7 @@ public class ZMartKafkaStreamsApp {
         //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic rewards  --from-beginning
         //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic purchases  --from-beginning
         MockDataProducer.producePurchaseData();
-
-        KafkaStreams kafkaStreams = new KafkaStreams(streamsBuilder.build(),streamsConfig);
+        KafkaStreams kafkaStreams = new KafkaStreams(streamsBuilder.build(), getProperties());
         LOG.info("ZMart First Kafka Streams Application Started");
         kafkaStreams.start();
         Thread.sleep(65000);

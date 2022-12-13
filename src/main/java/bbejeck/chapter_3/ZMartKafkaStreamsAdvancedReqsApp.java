@@ -48,47 +48,31 @@ public class ZMartKafkaStreamsAdvancedReqsApp {
 
     public static void main(String[] args) throws Exception {
 
-        StreamsConfig streamsConfig = new StreamsConfig(getProperties());
-
         Serde<Purchase> purchaseSerde = StreamsSerdes.PurchaseSerde();
         Serde<PurchasePattern> purchasePatternSerde = StreamsSerdes.PurchasePatternSerde();
         Serde<RewardAccumulator> rewardAccumulatorSerde = StreamsSerdes.RewardAccumulatorSerde();
         Serde<String> stringSerde = Serdes.String();
 
         StreamsBuilder builder = new StreamsBuilder();
-
-
         // previous requirements
-        KStream<String,Purchase> purchaseKStream = builder.stream( "transactions", Consumed.with(stringSerde, purchaseSerde))
-                .mapValues(p -> Purchase.builder(p).maskCreditCard().build());
+        KStream<String,Purchase> transactionKStream = builder.stream( "transactions", Consumed.with(stringSerde, purchaseSerde));
+        KStream<String,Purchase> purchaseKStream = transactionKStream.mapValues(p -> Purchase.builder(p).maskCreditCard().build());
 
         KStream<String, PurchasePattern> patternKStream = purchaseKStream.mapValues(purchase -> PurchasePattern.builder(purchase).build());
-
         patternKStream.print( Printed.<String, PurchasePattern>toSysOut().withLabel("patterns"));
         patternKStream.to("patterns", Produced.with(stringSerde,purchasePatternSerde));
 
-
         KStream<String, RewardAccumulator> rewardsKStream = purchaseKStream.mapValues(purchase -> RewardAccumulator.builder(purchase).build());
-
         rewardsKStream.print(Printed.<String, RewardAccumulator>toSysOut().withLabel("rewards"));
         rewardsKStream.to("rewards", Produced.with(stringSerde,rewardAccumulatorSerde));
 
-
-
-           // selecting a key for storage and filtering out low dollar purchases
-
-
-        KeyValueMapper<String, Purchase, Long> purchaseDateAsKey = (key, purchase) -> purchase.getPurchaseDate().getTime();
-
-        KStream<Long, Purchase> filteredKStream = purchaseKStream.filter((key, purchase) -> purchase.getPrice() > 5.00).selectKey(purchaseDateAsKey);
-
+        // selecting a key for storage and filtering out low dollar purchases
+        KStream<Long, Purchase> filteredKStream = purchaseKStream.filter((key, purchase) -> purchase.getPrice() > 5.00)
+                .selectKey((key, purchase) -> purchase.getPurchaseDate().getTime());
         filteredKStream.print(Printed.<Long, Purchase>toSysOut().withLabel("purchases"));
         filteredKStream.to("purchases", Produced.with(Serdes.Long(),purchaseSerde));
 
-
-
          // branching stream for separating out purchases in new departments to their own topics
-
         Predicate<String, Purchase> isCoffee = (key, purchase) -> purchase.getDepartment().equalsIgnoreCase("coffee");
         Predicate<String, Purchase> isElectronics = (key, purchase) -> purchase.getDepartment().equalsIgnoreCase("electronics");
 
@@ -104,25 +88,20 @@ public class ZMartKafkaStreamsAdvancedReqsApp {
         kstreamByDept[electronics].print(Printed.<String, Purchase>toSysOut().withLabel("electronics"));
 
 
-
-
          // security Requirements to record transactions for certain employee
         //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic patterns  --from-beginning
         //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic rewards  --from-beginning
         //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic purchases  --from-beginning
         //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic coffee  --from-beginning
         //kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic electronics  --from-beginning
-        ForeachAction<String, Purchase> purchaseForeachAction = (key, purchase) ->
-                SecurityDBService.saveRecord(purchase.getPurchaseDate(), purchase.getEmployeeId(), purchase.getItemPurchased());
-
-        
-        purchaseKStream.filter((key, purchase) -> purchase.getEmployeeId().equals("000000")).foreach(purchaseForeachAction);
+        purchaseKStream.filter((key, purchase) -> purchase.getEmployeeId().equals("000000")).foreach((key, purchase) ->
+                SecurityDBService.saveRecord(purchase.getPurchaseDate(), purchase.getEmployeeId(), purchase.getItemPurchased()));
 
 
         // used only to produce data for this application, not typical usage
         MockDataProducer.producePurchaseData();
         
-        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(),streamsConfig);
+        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(),getProperties());
         LOG.info("ZMart Advanced Requirements Kafka Streams Application Started");
         kafkaStreams.start();
         Thread.sleep(65000);

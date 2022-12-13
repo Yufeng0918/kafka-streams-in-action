@@ -44,9 +44,7 @@ public class KafkaStreamsJoinsApp {
 
     public static void main(String[] args) throws Exception {
 
-        StreamsConfig streamsConfig = new StreamsConfig(getProperties());
         StreamsBuilder builder = new StreamsBuilder();
-
 
         Serde<Purchase> purchaseSerde = StreamsSerdes.PurchaseSerde();
         Serde<String> stringSerde = Serdes.String();
@@ -86,7 +84,7 @@ public class KafkaStreamsJoinsApp {
         MockDataProducer.producePurchaseData();
         
         LOG.info("Starting Join Examples");
-        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), streamsConfig);
+        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), getProperties());
         kafkaStreams.start();
         Thread.sleep(65000);
         LOG.info("Shutting down the Join Examples now");

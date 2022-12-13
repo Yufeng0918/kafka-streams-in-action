@@ -16,13 +16,12 @@ import bbejeck.util.collection.Tuple;
 import bbejeck.util.serializer.JsonDeserializer;
 import bbejeck.util.serializer.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serializer;
+import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.common.serialization.Serdes.WrapperSerde;
 
 import java.lang.reflect.Type;
 import java.util.List;
-import java.util.Map;
 
 
 public class StreamsSerdes {
@@ -149,7 +148,7 @@ public class StreamsSerdes {
          }
     }
 
-    public static final class StockPerformanceSerde extends WrapperSerde<StockPerformance> {
+    public static final class StockPerformanceSerde extends Serdes.WrapperSerde<StockPerformance> {
         public StockPerformanceSerde() {
             super(new JsonSerializer<>(), new JsonDeserializer<>(StockPerformance.class));
         }
@@ -162,54 +161,23 @@ public class StreamsSerdes {
         }
     }
 
-    public static final class ClickEventSerde extends WrapperSerde<ClickEvent> {
+    public static final class ClickEventSerde extends Serdes.WrapperSerde<ClickEvent> {
         public ClickEventSerde () {
             super(new JsonSerializer<>(), new JsonDeserializer<>(ClickEvent.class));
         }
     }
 
-    public static final class TransactionsListSerde extends  WrapperSerde<List<StockTransaction>>  {
+    public static final class TransactionsListSerde extends Serdes.WrapperSerde<List<StockTransaction>> {
         private static final Type listType = new TypeToken<List<StockTransaction>>(){}.getType();
         public TransactionsListSerde() {
             super(new JsonSerializer<>(), new JsonDeserializer<>(listType));
         }
     }
 
-    public static final class EventsListSerde extends  WrapperSerde<List<ClickEvent>>  {
+    public static final class EventsListSerde extends Serdes.WrapperSerde<List<ClickEvent>> {
         private static final Type listType = new TypeToken<List<ClickEvent>>(){}.getType();
         public EventsListSerde() {
             super(new JsonSerializer<>(), new JsonDeserializer<>(listType));
-        }
-    }
-
-    private static class WrapperSerde<T> implements Serde<T> {
-
-        private JsonSerializer<T> serializer;
-        private JsonDeserializer<T> deserializer;
-
-         WrapperSerde(JsonSerializer<T> serializer, JsonDeserializer<T> deserializer) {
-            this.serializer = serializer;
-            this.deserializer = deserializer;
-        }
-
-        @Override
-        public void configure(Map<String, ?> map, boolean b) {
-
-        }
-
-        @Override
-        public void close() {
-
-        }
-
-        @Override
-        public Serializer<T> serializer() {
-           return serializer;
-        }
-
-        @Override
-        public Deserializer<T> deserializer() {
-           return deserializer;
         }
     }
 }

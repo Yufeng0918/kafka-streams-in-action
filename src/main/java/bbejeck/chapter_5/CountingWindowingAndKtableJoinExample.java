@@ -38,9 +38,6 @@ public class CountingWindowingAndKtableJoinExample {
 
     public static void main(String[] args) throws Exception {
 
-
-        StreamsConfig streamsConfig = new StreamsConfig(getProperties());
-
         Serde<String> stringSerde = Serdes.String();
         Serde<StockTransaction> transactionSerde = StreamsSerdes.StockTransactionSerde();
         Serde<TransactionSummary> transactionKeySerde = StreamsSerdes.TransactionSummarySerde();
@@ -91,7 +88,7 @@ public class CountingWindowingAndKtableJoinExample {
 
 
 
-        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), streamsConfig);
+        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), getProperties());
         kafkaStreams.cleanUp();
         
         kafkaStreams.setUncaughtExceptionHandler((t, e) -> {

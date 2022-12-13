@@ -51,8 +51,6 @@ import java.util.concurrent.CountDownLatch;
 
     public static void main(String[] args) throws Exception {
 
-        StreamsConfig streamsConfig = new StreamsConfig(getProperties());
-
         Serde<Purchase> purchaseSerde = StreamsSerdes.PurchaseSerde();
         Serde<PurchasePattern> purchasePatternSerde = StreamsSerdes.PurchasePatternSerde();
         Serde<RewardAccumulator> rewardAccumulatorSerde = StreamsSerdes.RewardAccumulatorSerde();
@@ -116,7 +114,7 @@ import java.util.concurrent.CountDownLatch;
         Topology topology = streamsBuilder.build();
 
 
-        KafkaStreams kafkaStreams = new KafkaStreams(topology, streamsConfig);
+        KafkaStreams kafkaStreams = new KafkaStreams(topology, getProperties());
 
         KafkaStreams.StateListener stateListener = (newState, oldState) -> {
             if (newState == KafkaStreams.State.RUNNING && oldState == KafkaStreams.State.REBALANCING) {
