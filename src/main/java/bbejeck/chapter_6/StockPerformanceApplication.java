@@ -54,7 +54,7 @@ public class StockPerformanceApplication {
 
         topology.addProcessor("stocks-printer", new KStreamPrinter("StockPerformance"), "stocks-processor");
 
-        KafkaStreams kafkaStreams = new KafkaStreams(topology, streamsConfig);
+        KafkaStreams kafkaStreams = new KafkaStreams(topology, getProperties());
         MockDataProducer.produceStockTransactionsWithKeyFunction(50,50, 25, StockTransaction::getSymbol);
         System.out.println("Stock Analysis App Started");
         kafkaStreams.cleanUp();

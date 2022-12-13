@@ -8,6 +8,7 @@ import org.apache.kafka.streams.processor.AbstractProcessor;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.state.KeyValueStore;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class CogroupingProcessor extends AbstractProcessor<String, Tuple<ClickEv
         super.init(context);
         tupleStore = (KeyValueStore) context().getStateStore(TUPLE_STORE_NAME);
         CogroupingPunctuator punctuator = new CogroupingPunctuator(tupleStore, context());
-        context().schedule(15000L, STREAM_TIME, punctuator);
+        context().schedule(Duration.ofSeconds(15L), STREAM_TIME, punctuator);
     }
 
     @Override

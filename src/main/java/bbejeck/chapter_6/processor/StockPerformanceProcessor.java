@@ -9,6 +9,7 @@ import org.apache.kafka.streams.processor.ProcessorContext;
 import org.apache.kafka.streams.processor.PunctuationType;
 import org.apache.kafka.streams.state.KeyValueStore;
 
+import java.time.Duration;
 import java.time.Instant;
 
 public class StockPerformanceProcessor extends AbstractProcessor<String, StockTransaction> {
@@ -31,7 +32,7 @@ public class StockPerformanceProcessor extends AbstractProcessor<String, StockTr
                                                                                context(),
                                                                                keyValueStore);
         
-      context().schedule(10000, PunctuationType.WALL_CLOCK_TIME, punctuator);
+      context().schedule(Duration.ofSeconds(10L), PunctuationType.WALL_CLOCK_TIME, punctuator);
     }
 
     @Override

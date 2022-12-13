@@ -61,7 +61,7 @@ public class GlobalKTableExample {
         KStream<String, TransactionSummary> countStream =
                 builder.stream( STOCK_TRANSACTIONS_TOPIC, Consumed.with(stringSerde, transactionSerde).withOffsetResetPolicy(LATEST))
                         .groupBy((noKey, transaction) -> TransactionSummary.from(transaction), Serialized.with(transactionSummarySerde, transactionSerde))
-                        .windowedBy(SessionWindows.with(twentySeconds)).count()
+                        .windowedBy(SessionWindows.with(Duration.ofSeconds(20L))).count()
                         .toStream().map(transactionMapper);
 
         GlobalKTable<String, String> publicCompanies = builder.globalTable(COMPANIES.topicName());

@@ -3,6 +3,7 @@ package bbejeck.chapter_5;
 
 import bbejeck.chapter_5.timestamp_extractor.StockTransactionTimestampExtractor;
 import bbejeck.clients.producer.MockDataProducer;
+import bbejeck.model.CustomerTransactions;
 import bbejeck.model.StockTransaction;
 import bbejeck.model.TransactionSummary;
 import bbejeck.util.datagen.CustomDateGenerator;
@@ -11,19 +12,15 @@ import bbejeck.util.serde.StreamsSerdes;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.common.utils.Bytes;
+import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.Joined;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Printed;
-import org.apache.kafka.streams.kstream.Serialized;
-import org.apache.kafka.streams.kstream.SessionWindows;
-import org.apache.kafka.streams.kstream.ValueJoiner;
-import org.apache.kafka.streams.kstream.Windowed;
+import org.apache.kafka.streams.state.SessionStore;
+import org.apache.kafka.streams.state.WindowStore;
+import org.apache.kafka.streams.state.internals.SessionStoreBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,26 +46,29 @@ public class CountingWindowingAndKtableJoinExample {
         Serde<TransactionSummary> transactionKeySerde = StreamsSerdes.TransactionSummarySerde();
 
         StreamsBuilder builder = new StreamsBuilder();
-        long twentySeconds = 1000 * 20;
-        long fifteenMinutes = 1000 * 60 * 15;
-        long fiveSeconds = 1000 * 5;
         KTable<Windowed<TransactionSummary>, Long> customerTransactionCounts =
                  builder.stream(STOCK_TRANSACTIONS_TOPIC, Consumed.with(stringSerde, transactionSerde).withOffsetResetPolicy(LATEST))
                 .groupBy((noKey, transaction) -> TransactionSummary.from(transaction),
-                        Serialized.with(transactionKeySerde, transactionSerde))
-                 // session window comment line below and uncomment another line below for a different window example
-                .windowedBy(SessionWindows.with(twentySeconds).until(fifteenMinutes)).count();
+                        Grouped.with(transactionKeySerde, transactionSerde))
+//                 // session window comment line below and uncomment another line below for a different window example
+//                .windowedBy(SessionWindows.with(Duration.ofSeconds(20L)).grace(Duration.ofSeconds(20L)))
+//                         .count(Materialized.<TransactionSummary, Long, SessionStore<Bytes, byte[]>>as("count")
+//                                 .withKeySerde(transactionKeySerde).withValueSerde(Serdes.Long()).withRetention(Duration.ofSeconds(15L * 60)));
 
                 //The following are examples of different windows examples
 
                 //Tumbling window with timeout 15 minutes
-                //.windowedBy(TimeWindows.of(twentySeconds).until(fifteenMinutes)).count();
+//                .windowedBy(TimeWindows.of(Duration.ofSeconds(20L)).grace(Duration.ofSeconds(5L)))
+//                         .count(Materialized.<TransactionSummary, Long, WindowStore<Bytes, byte[]>>as("count")
+//                                 .withKeySerde(transactionKeySerde).withValueSerde(Serdes.Long()).withRetention(Duration.ofSeconds(15L * 60)));
 
                 //Tumbling window with default timeout 24 hours
                 //.windowedBy(TimeWindows.of(twentySeconds)).count();
 
                 //Hopping window 
-                //.windowedBy(TimeWindows.of(twentySeconds).advanceBy(fiveSeconds).until(fifteenMinutes)).count();
+                .windowedBy(TimeWindows.of(Duration.ofSeconds(20L)).grace(Duration.ofSeconds(5L)).advanceBy(Duration.ofSeconds(5L)))
+                         .count(Materialized.<TransactionSummary, Long, WindowStore<Bytes, byte[]>>as("count")
+                                 .withKeySerde(transactionKeySerde).withValueSerde(Serdes.Long()).withRetention(Duration.ofSeconds(15L * 60)));
 
         customerTransactionCounts.toStream().print(Printed.<Windowed<TransactionSummary>, Long>toSysOut().withLabel("Customer Transactions Counts"));
 

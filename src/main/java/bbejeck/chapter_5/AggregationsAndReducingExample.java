@@ -9,16 +9,11 @@ import bbejeck.util.serde.StreamsSerdes;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
-import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
 import org.apache.kafka.streams.StreamsBuilder;
 import org.apache.kafka.streams.StreamsConfig;
-import org.apache.kafka.streams.kstream.KTable;
-import org.apache.kafka.streams.kstream.Materialized;
-import org.apache.kafka.streams.kstream.Produced;
-import org.apache.kafka.streams.kstream.Serialized;
-import org.apache.kafka.streams.kstream.ValueMapper;
 import org.apache.kafka.streams.processor.WallclockTimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,8 +34,6 @@ public class AggregationsAndReducingExample {
 
     public static void main(String[] args) throws Exception {
 
-
-        StreamsConfig streamsConfig = new StreamsConfig(getProperties());
 
         Serde<String> stringSerde = Serdes.String();
         Serde<StockTransaction> stockTransactionSerde = StreamsSerdes.StockTransactionSerde();
@@ -71,11 +64,11 @@ public class AggregationsAndReducingExample {
                 Consumed.with(stringSerde, stockTransactionSerde)
                         .withOffsetResetPolicy(EARLIEST))
                 .mapValues(st -> ShareVolume.newBuilder(st).build())
-                .groupBy((k, v) -> v.getSymbol(), Serialized.with(stringSerde, shareVolumeSerde))
+                .groupBy((k, v) -> v.getSymbol(), Grouped.with(stringSerde, shareVolumeSerde))
                 .reduce(ShareVolume::sum);
 
 
-        shareVolume.groupBy((k, v) -> KeyValue.pair(v.getIndustry(), v), Serialized.with(stringSerde, shareVolumeSerde))
+        shareVolume.groupBy((k, v) -> KeyValue.pair(v.getIndustry(), v), Grouped.with(stringSerde, shareVolumeSerde))
                 .aggregate(() -> fixedQueue,
                         (k, v, agg) -> agg.add(v),
                         (k, v, agg) -> agg.remove(v),
@@ -85,8 +78,7 @@ public class AggregationsAndReducingExample {
                 .to("stock-volume-by-company", Produced.with(stringSerde, stringSerde));
 
 
-
-        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), streamsConfig);
+        KafkaStreams kafkaStreams = new KafkaStreams(builder.build(), getProperties());
         MockDataProducer.produceStockTransactions(15, 50, 25, false);
         LOG.info("First Reduction and Aggregation Example Application Started");
         kafkaStreams.start();
