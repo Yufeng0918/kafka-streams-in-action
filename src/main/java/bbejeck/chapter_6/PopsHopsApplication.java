@@ -29,12 +29,9 @@ public class PopsHopsApplication {
 
     public static void main(String[] args) throws Exception {
 
-        StreamsConfig streamsConfig = new StreamsConfig(getProperties());
         Deserializer<BeerPurchase> beerPurchaseDeserializer = new JsonDeserializer<>(BeerPurchase.class);
         Serde<String> stringSerde = Serdes.String();
         Deserializer<String> stringDeserializer = stringSerde.deserializer();
-        Serializer<String> stringSerializer = stringSerde.serializer();
-        Serializer<BeerPurchase> beerPurchaseSerializer = new JsonSerializer<>();
 
         Topology toplogy = new Topology();
 

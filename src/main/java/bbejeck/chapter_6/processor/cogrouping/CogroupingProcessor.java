@@ -52,5 +52,4 @@ public class CogroupingProcessor extends AbstractProcessor<String, Tuple<ClickEv
 
         tupleStore.put(key, cogroupedTuple);
     }
-
 }

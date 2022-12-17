@@ -10,6 +10,7 @@ import org.apache.kafka.streams.processor.PunctuationType;
 import org.apache.kafka.streams.state.KeyValueIterator;
 import org.apache.kafka.streams.state.KeyValueStore;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,7 @@ public class StockPerformanceMultipleValuesTransformer implements Transformer<St
     public void init(ProcessorContext processorContext) {
         this.processorContext = processorContext;
         keyValueStore = (KeyValueStore) this.processorContext.getStateStore(stateStoreName);
-        this.processorContext.schedule(15000, PunctuationType.STREAM_TIME, this::punctuate);
+        this.processorContext.schedule(Duration.ofSeconds(15L), PunctuationType.STREAM_TIME, this::punctuate);
     }
 
     @Override
@@ -54,7 +55,6 @@ public class StockPerformanceMultipleValuesTransformer implements Transformer<St
         return null;
     }
 
-//    @Override
     @SuppressWarnings("deprecation")
     public KeyValue<String, List<KeyValue<String, StockPerformance>>> punctuate(long timestamp) {
         List<KeyValue<String, StockPerformance>> stockPerformanceList = new ArrayList<>();
